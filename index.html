@@ -478,7 +478,7 @@
                               - IMDb rating if available
                               - Streaming platform if notable
                               - Anything you want to know?';
-                              // Format as HTML with line breaks and appropriate emojis.`;
+                              
                 
                 const response = await fetchGeminiResponse(prompt);
                 addMessage(`🎬 <strong>${genre.toUpperCase()} SHOWS</strong><br><br>${response}`);
@@ -584,8 +584,8 @@
                               - Include show title in bold
                               - Brief explanation of why they might like it based on their watchlist
                               - Year, rating, and where to watch if available
-                              - Use TV-related emojis
-                              Format as HTML with line breaks.`;
+                              - Use TV-related emojis;
+                              
                 
                 const response = await fetchGeminiResponse(prompt);
                 addMessage(`📺 <strong>RECOMMENDATIONS BASED ON YOUR WATCHLIST</strong><br><br>${response}`);
@@ -753,7 +753,6 @@
                                   - Relevant years or ratings if available<br>
                                   - Use TV-related emojis<br>
                                   - Keep response under 150 words<br>
-                                  - Format as HTML with line breaks<br>
                                   - Include streaming service information when relevant`; 
                     
                     const geminiResponse = await fetchGeminiResponse(prompt);
