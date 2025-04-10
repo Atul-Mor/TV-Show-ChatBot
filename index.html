@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 ShowBuddy - TV Tracker & Recommender</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #0f0f0f;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            flex: 1;
+        }
+
+        .genre-sidebar {
+            background: #1a1a1a;
+            padding: 1.5rem;
+            border-radius: 15px;
+            height: fit-content;
+        }
+
+        .genre-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .genre-btn {
+            background: #2d2d2d;
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .genre-btn:hover {
+            background: #3d3d3d;
+            transform: translateX(5px);
+        }
+
+        .genre-btn.loading {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
+        .chat-container {
+            background: #1a1a1a;
+            border-radius: 15px;
+            padding: 2rem;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 1rem;
+            border-radius: 12px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .user-message {
+            background: #2d2d2d;
+            align-self: flex-end;
+        }
+
+        .bot-message {
+            background: #363636;
+            align-self: flex-start;
+        }
+
+        .typing-indicator {
+            background: #363636;
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            align-self: flex-start;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+
+        .typing-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #4a90e2;
+            margin: 0 2px;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #3d3d3d;
+        }
+
+        input {
+            flex: 1;
+            background: #2d2d2d;
+            border: none;
+            padding: 1rem;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 0 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #357abd;
+        }
+
+        button:disabled {
+            background: #3d3d3d;
+            cursor: not-allowed;
+        }
+
+        .watchlist-container {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #3d3d3d;
+        }
+
+        .watchlist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #2d2d2d;
+        }
+
+        .watchlist-item button {
+            background: #e25555;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+
+        .watchlist-item button:hover {
+            background: #c04343;
+        }
+
+        .actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .actions button {
+            font-size: 0.9rem;
+            padding: 10px;
+        }
+
+        .model-selector {
+            margin-top: 1rem;
+            width: 100%;
+            padding: 10px;
+            background: #2d2d2d;
+            border: none;
+            color: white;
+            border-radius: 8px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes typingAnimation {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4a90e2;
+            border-radius: 4px;
+        }
+
+        h2 {
+            margin-bottom: 1.5rem;
+            color: #4a90e2;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 1rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .api-key-container {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .api-key-input {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .api-status {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .api-status.valid {
+            color: #4ade80;
+        }
+
+        .api-status.invalid {
+            color: #ef4444;
+        }
+
+        .settings-toggle {
+            background: #2d2d2d;
+            border: none;
+            color: #888;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            align-self: flex-end;
+            margin-bottom: 0.5rem;
+        }
+
+        .settings-panel {
+            background: #2d2d2d;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="genre-sidebar">
+            <h2>🎭 TV Genres</h2>
+            <div class="genre-list">
+                <button class="genre-btn" data-genre="crime">🔍 Crime</button>
+                <button class="genre-btn" data-genre="fantasy">🧙‍♂️ Fantasy</button>
+                <button class="genre-btn" data-genre="sci-fi">🚀 Sci-Fi</button>
+                <button class="genre-btn" data-genre="drama">🎭 Drama</button>
+                <button class="genre-btn" data-genre="comedy">😂 Comedy</button>
+                <button class="genre-btn" data-genre="horror">👻 Horror</button>
+                <button class="genre-btn" data-genre="documentary">📽️ Documentary</button>
+            </div>
+
+            <div class="api-key-container">
+                <button class="settings-toggle" id="settings-toggle">⚙️ Settings</button>
+                <div class="settings-panel" id="settings-panel">
+                    <p>Gemini API Key:</p>
+                    <div class="api-key-input">
+                        <input type="password" id="api-key-input" placeholder="Enter API key">
+                        <button id="save-api-key">Save</button>
+                    </div>
+                    <div class="api-status" id="api-status">Using default key</div>
+                    <select class="model-selector" id="model-selector">
+                        <option value="gemini-pro">Gemini Pro</option>
+                        <option value="gemini-2.0-flash" selected>Gemini 2.0 Flash</option>
+                    </select>
+                </div>
+
+                <div class="watchlist-container">
+                    <h2>📋 My Watchlist</h2>
+                    <div id="watchlist">
+                        <p>Add shows to your watchlist!</p>
+                    </div>
+                    <div class="actions">
+                        <button id="clear-watchlist">Clear All</button>
+                        <button id="get-recommendations">Get Recommendations</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot-message">
+                    🎉 Hi! I'm ShowBuddy! Ask me about TV shows, track your watchlist, 
+                    or click a genre to get recommendations! 📺<br><br>
+                    Try asking:<br>
+                    • "What's the best sci-fi show?"<br>
+                    • "Recommend a crime drama"<br>
+                    • "Tell me about popular fantasy series"<br>
+                    • "Add Breaking Bad to my watchlist"
+                </div>
+            </div>
+            <div class="input-container">
+                <input type="text" id="user-input" placeholder="Ask about TV shows..." autocomplete="off">
+                <button id="send-btn" onclick="sendMessage()">Send ➤</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        By ShowBuddy Team
+    </div>
+
+    <script>
+        // Default API key - replace with your actual Gemini API key or let users input their own
+        let GEMINI_API_KEY = "AIzaSyCJbLNsG_uTFzcYo6gD2eBV9t9cyHFN6qw";
+        let selectedModel = "gemini-2.0-flash";
+        let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+        
+        // Check for saved API key in localStorage
+        if (localStorage.getItem('gemini_api_key')) {
+            GEMINI_API_KEY = localStorage.getItem('gemini_api_key');
+            document.getElementById('api-key-input').value = GEMINI_API_KEY;
+            document.getElementById('api-status').textContent = "Using saved key";
+            document.getElementById('api-status').classList.add('valid');
+        }
+
+        // Get API URL based on selected model
+        function getApiUrl() {
+            return `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${GEMINI_API_KEY}`;
+        }
+        
+        // Enhanced knowledge base for fallback
+        const enhancedKnowledgeBase = {
+            "best show": "🏆 According to IMDb and critics, some of the best TV shows of all time include:<br>• Breaking Bad (9.5/10)<br>• Game of Thrones (9.2/10)<br>• The Sopranos (9.2/10)<br>• The Wire (9.3/10)<br>• Friends (8.9/10)",
+            "top rated": "⭐ Top rated shows by genre:<br><br>• <strong>Drama</strong>: The Sopranos, Succession<br>• <strong>Comedy</strong>: The Office, Parks and Recreation<br>• <strong>Sci-Fi</strong>: Stranger Things, Black Mirror<br>• <strong>Crime</strong>: Breaking Bad, Mindhunter",
+            "popular": "📈 Currently popular shows (2024-2025):<br>• The Last of Us<br>• House of the Dragon<br>• The Bear<br>• Wednesday<br>• The Mandalorian<br>• Shogun<br>• Fallout<br>• Severance"
+        };
+
+        let isLoading = false;
+
+        function addMessage(message, isUser = false) {
+            const chat = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            messageDiv.innerHTML = message;
+            chat.appendChild(messageDiv);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const chat = document.getElementById('chat-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+            `;
+            chat.appendChild(typingDiv);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+
+        function updateWatchlist() {
+            const watchlistEl = document.getElementById('watchlist');
+            
+            if (watchlist.length === 0) {
+                watchlistEl.innerHTML = '<p>Add shows to your watchlist!</p>';
+                return;
+            }
+            
+            watchlistEl.innerHTML = '';
+            watchlist.forEach((show, index) => {
+                const item = document.createElement('div');
+                item.className = 'watchlist-item';
+                item.innerHTML = `
+                    <span>${show}</span>
+                    <button onclick="removeFromWatchlist(${index})">Remove</button>
+                `;
+                watchlistEl.appendChild(item);
+            });
+            
+            // Save to localStorage
+            localStorage.setItem('watchlist', JSON.stringify(watchlist));
+        }
+
+        function addToWatchlist(show) {
+            const cleanShow = show.trim();
+            if (!watchlist.includes(cleanShow) && cleanShow !== '') {
+                watchlist.push(cleanShow);
+                updateWatchlist();
+                return true;
+            }
+            return false;
+        }
+
+        function removeFromWatchlist(index) {
+            watchlist.splice(index, 1);
+            updateWatchlist();
+        }
+
+        function clearWatchlist() {
+            watchlist = [];
+            updateWatchlist();
+        }
+
+        async function handleGenreClick(genre) {
+            if (isLoading) return;
+            
+            const btn = document.querySelector(`.genre-btn[data-genre="${genre}"]`);
+            btn.classList.add('loading');
+            isLoading = true;
+            
+            showTypingIndicator();
+            
+            try {
+                const prompt = `Act as a TV show expert. Recommend 3 excellent ${genre} TV shows with:
+                              - Title in bold
+                              - Short description (10-15 words)
+                              - Year range
+                              - IMDb rating if available
+                              - Streaming platform if notable
+                              Format as HTML with line breaks and appropriate emojis.`;
+                
+                const response = await fetchGeminiResponse(prompt);
+                addMessage(`🎬 <strong>${genre.toUpperCase()} SHOWS</strong><br><br>${response}`);
+            } catch (error) {
+                console.error("API Error:", error);
+                addMessage("⚠️ Couldn't connect to my recommendation engine. Try again later or check your API key in settings!");
+            } finally {
+                btn.classList.remove('loading');
+                isLoading = false;
+                hideTypingIndicator();
+            }
+        }
+
+        async function fetchGeminiResponse(prompt) {
+            try {
+                const response = await fetch(getApiUrl(), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: prompt
+                            }]
+                        }]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Handle different response structures based on model
+                if (selectedModel === "gemini-2.0-flash") {
+                    if (!data.candidates || !data.candidates[0].content || !data.candidates[0].content.parts) {
+                        throw new Error("Invalid response structure from Gemini 2.0 Flash");
+                    }
+                    return data.candidates[0].content.parts[0].text;
+                } else {
+                    if (!data.candidates || !data.candidates[0].content.parts[0].text) {
+                        throw new Error("Invalid response structure from Gemini Pro");
+                    }
+                    return data.candidates[0].content.parts[0].text;
+                }
+            } catch (error) {
+                console.error("Fetch error:", error);
+                throw error;
+            }
+        }
+
+        function parseWatchlistCommand(message) {
+            const lowerMessage = message.toLowerCase();
+            
+            // Check for "add X to watchlist" patterns
+            if (lowerMessage.includes('add') && 
+                (lowerMessage.includes('watchlist') || lowerMessage.includes('watch list'))) {
+                // Extract show name - find what's between "add" and "to watchlist"
+                const regex = /add\s+(.+?)\s+to\s+(my\s+)?(watchlist|watch list)/i;
+                const match = message.match(regex);
+                
+                if (match && match[1]) {
+                    return { action: 'add', show: match[1].trim() };
+                }
+            }
+            
+            // Check for "remove X from watchlist" patterns
+            if (lowerMessage.includes('remove') && 
+                (lowerMessage.includes('watchlist') || lowerMessage.includes('watch list'))) {
+                const regex = /remove\s+(.+?)\s+from\s+(my\s+)?(watchlist|watch list)/i;
+                const match = message.match(regex);
+                
+                if (match && match[1]) {
+                    return { action: 'remove', show: match[1].trim() };
+                }
+            }
+            
+            // Other watchlist related commands
+            if (lowerMessage.match(/clear\s+(my\s+)?(watchlist|watch list)/i)) {
+                return { action: 'clear' };
+            }
+            
+            if (lowerMessage.match(/show\s+(my\s+)?(watchlist|watch list)/i)) {
+                return { action: 'show' };
+            }
+            
+            return null;
+        }
+
+        async function getWatchlistRecommendations() {
+            if (watchlist.length === 0) {
+                addMessage("Your watchlist is empty! Add some shows first to get personalized recommendations.");
+                return;
+            }
+            
+            if (isLoading) return;
+            isLoading = true;
+            showTypingIndicator();
+            
+            try {
+                const prompt = `Based on these shows in the user's watchlist: ${watchlist.join(', ')}, 
+                              recommend 3 other TV shows they might enjoy. For each recommendation:
+                              - Include show title in bold
+                              - Brief explanation of why they might like it based on their watchlist
+                              - Year, rating, and where to watch if available
+                              - Use TV-related emojis
+                              Format as HTML with line breaks.`;
+                
+                const response = await fetchGeminiResponse(prompt);
+                addMessage(`📺 <strong>RECOMMENDATIONS BASED ON YOUR WATCHLIST</strong><br><br>${response}`);
+            } catch (error) {
+                console.error("API Error:", error);
+                addMessage("⚠️ Couldn't generate recommendations. Try again later or check your API key in settings!");
+            } finally {
+                isLoading = false;
+                hideTypingIndicator();
+            }
+        }
+
+        async function sendMessage() {
+            if (isLoading) return;
+            
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, true);
+            input.value = '';
+            document.getElementById('send-btn').disabled = true;
+            isLoading = true;
+            showTypingIndicator();
+
+            try {
+                // Check for watchlist commands first
+                const watchlistCommand = parseWatchlistCommand(message);
+                if (watchlistCommand) {
+                    switch (watchlistCommand.action) {
+                        case 'add':
+                            const added = addToWatchlist(watchlistCommand.show);
+                            if (added) {
+                                addMessage(`✅ Added <strong>${watchlistCommand.show}</strong> to your watchlist!`);
+                            } else {
+                                addMessage(`⚠️ <strong>${watchlistCommand.show}</strong> is already in your watchlist or the show name was empty.`);
+                            }
+                            break;
+                        case 'remove':
+                            const index = watchlist.findIndex(show => 
+                                show.toLowerCase() === watchlistCommand.show.toLowerCase());
+                            if (index !== -1) {
+                                const removedShow = watchlist[index];
+                                removeFromWatchlist(index);
+                                addMessage(`✅ Removed <strong>${removedShow}</strong> from your watchlist.`);
+                            } else {
+                                addMessage(`⚠️ Couldn't find <strong>${watchlistCommand.show}</strong> in your watchlist.`);
+                            }
+                            break;
+                        case 'clear':
+                            clearWatchlist();
+                            addMessage(`✅ Your watchlist has been cleared.`);
+                            break;
+                        case 'show':
+                            if (watchlist.length === 0) {
+                                addMessage(`Your watchlist is empty! Try adding some shows.`);
+                            } else {
+                                const showList = watchlist.map(show => `• <strong>${show}</strong>`).join('<br>');
+                                addMessage(`📋 <strong>YOUR WATCHLIST</strong><br><br>${showList}`);
+                            }
+                            break;
+                    }
+                    return;
+                }
+
+                // Check enhanced knowledge base
+                const lowerMessage = message.toLowerCase();
+                let directAnswer = null;
+                
+                for (const [key, value] of Object.entries(enhancedKnowledgeBase)) {
+                    if (lowerMessage.includes(key)) {
+                        directAnswer = value;
+                        break;
+                    }
+                }
+
+                if (directAnswer) {
+                    addMessage(directAnswer);
+                } else {
+                    const isTVQuery = 
+                            lowerMessage.includes('tv') || 
+                            lowerMessage.includes('show') || 
+                            lowerMessage.includes('series') || 
+                            lowerMessage.includes('recommend') || 
+                            lowerMessage.includes('suggest') || 
+                            lowerMessage.includes('best') || 
+                            lowerMessage.includes('top') || 
+                            lowerMessage.includes('thriller') || 
+                            lowerMessage.includes('mood') || 
+                            lowerMessage.includes('popular') || 
+                            lowerMessage.includes('watch') || 
+                            lowerMessage.includes('binge') || 
+                            lowerMessage.includes('bored') || 
+                            lowerMessage.includes('what to watch') || 
+                            lowerMessage.includes('underrated') || 
+                            lowerMessage.includes('similar to') || 
+                            lowerMessage.includes('like') || 
+                            lowerMessage.includes('genre') || 
+                            lowerMessage.includes('comedy') || 
+                            lowerMessage.includes('drama') || 
+                            lowerMessage.includes('sci-fi') || 
+                            lowerMessage.includes('fantasy') || 
+                            lowerMessage.includes('romance') || 
+                            lowerMessage.includes('crime') || 
+                            lowerMessage.includes('animated') || 
+                            lowerMessage.includes('historical') || 
+                            lowerMessage.includes('feel-good') || 
+                            lowerMessage.includes('dark') || 
+                            lowerMessage.includes('twist') || 
+                            lowerMessage.includes('family-friendly') || 
+                            lowerMessage.includes('teen') || 
+                            lowerMessage.includes('adult') || 
+                            lowerMessage.includes('netflix') || 
+                            lowerMessage.includes('hbo') || 
+                            lowerMessage.includes('disney') || 
+                            lowerMessage.includes('prime') || 
+                            lowerMessage.includes('apple tv') || 
+                            lowerMessage.includes('hulu') || 
+                            lowerMessage.includes('short') || 
+                            lowerMessage.includes('long') || 
+                            lowerMessage.includes('season') || 
+                            lowerMessage.includes('episode') || 
+                            lowerMessage.includes('emmy') || 
+                            lowerMessage.includes('golden globe') || 
+                            lowerMessage.includes('imdb') || 
+                            lowerMessage.includes('actor') || 
+                            lowerMessage.includes('director') || 
+                            lowerMessage.includes('writer') || 
+                            lowerMessage.includes('90s') || 
+                            lowerMessage.includes('2000s') || 
+                            lowerMessage.includes('2024') || 
+                            lowerMessage.includes('korean') || 
+                            lowerMessage.includes('k-drama') || 
+                            lowerMessage.includes('spanish') || 
+                            lowerMessage.includes('british') || 
+                            lowerMessage.includes('anime') || 
+                            lowerMessage.includes('binge-worthy') || 
+                            lowerMessage.includes('addictive') || 
+                            lowerMessage.includes('plot twist') || 
+                            lowerMessage.includes('time travel') || 
+                            lowerMessage.includes('mystery') || 
+                            lowerMessage.includes('zombie') || 
+                            lowerMessage.includes('apocalypse') || 
+                            lowerMessage.includes('upcoming') || 
+                            lowerMessage.includes('cancelled') || 
+                            lowerMessage.includes('compare') || 
+                            lowerMessage.includes('rating') || 
+                            lowerMessage.includes('worth watching');
+
+                    if (!isTVQuery) {
+                        addMessage(`⚠️ I'm specialized in TV shows only! 🎬<br>
+                                  Try asking about:<br>
+                                  • Show recommendations<br>
+                                  • Genre information<br>
+                                  • Popular series<br>
+                                  • Managing your watchlist`);
+                        return;
+                    }
+
+                    const prompt = `As an expert TV show recommendation assistant, respond to this query: "${message}".
+                                  Include:<br>
+                                  - Show titles in bold<br>
+                                  - Brief descriptions<br>
+                                  - Relevant years or ratings if available<br>
+                                  - Use TV-related emojis<br>
+                                  - Keep response under 150 words<br>
+                                  - Format as HTML with line breaks<br>
+                                  - Include streaming service information when relevant`; 
+                    
+                    const geminiResponse = await fetchGeminiResponse(prompt);
+                    addMessage(`📺 ${geminiResponse}`);
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                addMessage("🔧 Sorry, I'm having trouble connecting to my knowledge base. Try again later or check your API key in settings!");
+            } finally {
+                isLoading = false;
+                hideTypingIndicator();
+                document.getElementById('send-btn').disabled = false;
+                input.focus();
+            }
+        }
+
+        // Save API key
+        document.getElementById('save-api-key').addEventListener('click', function() {
+            const newKey = document.getElementById('api-key-input').value.trim();
+            if (newKey) {
+                GEMINI_API_KEY = newKey;
+                localStorage.setItem('gemini_api_key', newKey);
+                document.getElementById('api-status').textContent = "API key saved";
+                document.getElementById('api-status').className = "api-status valid";
+            } else {
+                document.getElementById('api-status').textContent = "Please enter a valid API key";
+                document.getElementById('api-status').className = "api-status invalid";
+            }
+        });
+
+        // Toggle settings panel
+        document.getElementById('settings-toggle').addEventListener('click', function() {
+            const panel = document.getElementById('settings-panel');
+            if (panel.style.display === 'block') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+            }
+        });
+
+        // Model selector
+        document.getElementById('model-selector').addEventListener('change', function() {
+            selectedModel = this.value;
+        });
+
+        // Event Listeners
+        document.querySelectorAll('.genre-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleGenreClick(btn.dataset.genre));
+        });
+
+        document.getElementById('user-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !isLoading) sendMessage();
+        });
+
+        // Enable/disable send button based on input
+        document.getElementById('user-input').addEventListener('input', function() {
+            document.getElementById('send-btn').disabled = this.value.trim() === '';
+        });
+
+        document.getElementById('clear-watchlist').addEventListener('click', clearWatchlist);
+        document.getElementById('get-recommendations').addEventListener('click', getWatchlistRecommendations);
+
+        // Initialize watchlist
+        updateWatchlist();
+    </script>
+</body>
+</html>
