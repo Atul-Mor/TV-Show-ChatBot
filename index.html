@@ -246,7 +246,7 @@
 
         .footer {
             text-align: center;
-            padding: 1rem;
+            padding: 3rem;
             color: #666;
             font-size: 0.9rem;
         }
@@ -477,8 +477,7 @@
                               - Year range
                               - IMDb rating if available
                               - Streaming platform if notable
-                              - Anything you want to know?';
-                              
+                              `;
                 
                 const response = await fetchGeminiResponse(prompt);
                 addMessage(`🎬 <strong>${genre.toUpperCase()} SHOWS</strong><br><br>${response}`);
@@ -584,8 +583,8 @@
                               - Include show title in bold
                               - Brief explanation of why they might like it based on their watchlist
                               - Year, rating, and where to watch if available
-                              - Use TV-related emojis;
-                              
+                              - Use TV-related emojis
+                              `;
                 
                 const response = await fetchGeminiResponse(prompt);
                 addMessage(`📺 <strong>RECOMMENDATIONS BASED ON YOUR WATCHLIST</strong><br><br>${response}`);
@@ -670,9 +669,9 @@
                             lowerMessage.includes('tv') || 
                             lowerMessage.includes('show') || 
                             lowerMessage.includes('series') || 
-                            lowerMessage.includes('recommend') || 
-                            lowerMessage.includes('suggest') || 
-                            lowerMessage.includes('best') || 
+                            <!-- lowerMessage.includes('recommend') ||  -->
+                            <!-- lowerMessage.includes('suggest') ||  -->
+                            <!-- lowerMessage.includes('best') ||  -->
                             lowerMessage.includes('top') || 
                             lowerMessage.includes('thriller') || 
                             lowerMessage.includes('mood') || 
@@ -697,20 +696,20 @@
                             lowerMessage.includes('dark') || 
                             lowerMessage.includes('twist') || 
                             lowerMessage.includes('family-friendly') || 
-                            lowerMessage.includes('teen') || 
-                            lowerMessage.includes('adult') || 
+                            <!-- lowerMessage.includes('teen') ||  -->
+                            <!-- lowerMessage.includes('adult') ||  -->
                             lowerMessage.includes('netflix') || 
                             lowerMessage.includes('hbo') || 
                             lowerMessage.includes('disney') || 
                             lowerMessage.includes('prime') || 
                             lowerMessage.includes('apple tv') || 
-                            lowerMessage.includes('hulu') || 
+                            <!-- lowerMessage.includes('hulu') ||  -->
                             lowerMessage.includes('short') || 
-                            lowerMessage.includes('long') || 
+                            <!-- lowerMessage.includes('long') ||  -->
                             lowerMessage.includes('season') || 
                             lowerMessage.includes('episode') || 
                             lowerMessage.includes('emmy') || 
-                            lowerMessage.includes('golden globe') || 
+                            <!-- lowerMessage.includes('golden globe') ||  -->
                             lowerMessage.includes('imdb') || 
                             lowerMessage.includes('actor') || 
                             lowerMessage.includes('director') || 
@@ -720,8 +719,8 @@
                             lowerMessage.includes('2024') || 
                             lowerMessage.includes('korean') || 
                             lowerMessage.includes('k-drama') || 
-                            lowerMessage.includes('spanish') || 
-                            lowerMessage.includes('british') || 
+                            <!-- lowerMessage.includes('spanish') ||  -->
+                            <!-- lowerMessage.includes('british') ||  -->
                             lowerMessage.includes('anime') || 
                             lowerMessage.includes('binge-worthy') || 
                             lowerMessage.includes('addictive') || 
@@ -729,9 +728,9 @@
                             lowerMessage.includes('time travel') || 
                             lowerMessage.includes('mystery') || 
                             lowerMessage.includes('zombie') || 
-                            lowerMessage.includes('apocalypse') || 
+                            <!-- lowerMessage.includes('apocalypse') ||  -->
                             lowerMessage.includes('upcoming') || 
-                            lowerMessage.includes('cancelled') || 
+                            <!-- lowerMessage.includes('cancelled') ||  -->
                             lowerMessage.includes('compare') || 
                             lowerMessage.includes('rating') || 
                             lowerMessage.includes('worth watching');
