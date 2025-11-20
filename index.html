@@ -362,460 +362,461 @@
         By 12323724
     </div>
 
-    <script>
-        // Default API key - replace with your actual Gemini API key or let users input their own
-        let GEMINI_API_KEY = "AIzaSyCJbLNsG_uTFzcYo6gD2eBV9t9cyHFN6qw";
-        let selectedModel = "gemini-2.0-flash";
-        let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
-        
-        // Check for saved API key in localStorage
-        if (localStorage.getItem('gemini_api_key')) {
-            GEMINI_API_KEY = localStorage.getItem('gemini_api_key');
-            document.getElementById('api-key-input').value = GEMINI_API_KEY;
-            document.getElementById('api-status').textContent = "Using saved key";
-            document.getElementById('api-status').classList.add('valid');
+    
+<script>
+    // ============================
+    // ShowBuddy - Fixed Frontend JS
+    // ============================
+
+    // Default API key - replace with your actual Gemini API key or let users input their own
+    let GEMINI_API_KEY = "AIzaSyCJbLNsG_uTFzcYo6gD2eBV9t9cyHFN6qw";
+    let selectedModel = "gemini-2.0-flash";
+    let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+
+    // Check for saved API key in localStorage
+    if (localStorage.getItem('gemini_api_key')) {
+        GEMINI_API_KEY = localStorage.getItem('gemini_api_key');
+        const apiInput = document.getElementById('api-key-input');
+        if(apiInput) apiInput.value = GEMINI_API_KEY;
+        const apiStatus = document.getElementById('api-status');
+        if(apiStatus){
+            apiStatus.textContent = "Using saved key";
+            apiStatus.classList.add('valid');
         }
+    }
 
-        // Get API URL based on selected model
-        function getApiUrl() {
-            return `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${GEMINI_API_KEY}`;
-        }
-        
-        // Enhanced knowledge base for fallback
-        const enhancedKnowledgeBase = {
-            "best show": "🏆 According to IMDb and critics, some of the best TV shows of all time include:<br>• Breaking Bad (9.5/10)<br>• Game of Thrones (9.2/10)<br>• The Sopranos (9.2/10)<br>• The Wire (9.3/10)<br>• Friends (8.9/10)",
-            "top rated": "⭐ Top rated shows by genre:<br><br>• <strong>Drama</strong>: The Sopranos, Succession<br>• <strong>Comedy</strong>: The Office, Parks and Recreation<br>• <strong>Sci-Fi</strong>: Stranger Things, Black Mirror<br>• <strong>Crime</strong>: Breaking Bad, Mindhunter",
-            "popular": "📈 Currently popular shows (2024-2025):<br>• The Last of Us<br>• House of the Dragon<br>• The Bear<br>• Wednesday<br>• The Mandalorian<br>• Shogun<br>• Fallout<br>• Severance"
-        };
+    // Get API URL based on selected model
+    function getApiUrl() {
+        return `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${GEMINI_API_KEY}`;
+    }
 
-        let isLoading = false;
+    // Enhanced knowledge base for fallback
+    const enhancedKnowledgeBase = {
+        "best show": "🏆 According to IMDb and critics, some of the best TV shows of all time include:<br>• Breaking Bad (9.5/10)<br>• Game of Thrones (9.2/10)<br>• The Sopranos (9.2/10)<br>• The Wire (9.3/10)<br>• Friends (8.9/10)",
+        "top rated": "⭐ Top rated shows by genre:<br><br>• <strong>Drama</strong>: The Sopranos, Succession<br>• <strong>Comedy</strong>: The Office, Parks and Recreation<br>• <strong>Sci-Fi</strong>: Stranger Things, Black Mirror<br>• <strong>Crime</strong>: Breaking Bad, Mindhunter",
+        "popular": "📈 Currently popular shows (2024-2025):<br>• The Last of Us<br>• House of the Dragon<br>• The Bear<br>• Wednesday<br>• The Mandalorian<br>• Shogun<br>• Fallout<br>• Severance"
+    };
 
-        function addMessage(message, isUser = false) {
-            const chat = document.getElementById('chat-messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
-            messageDiv.innerHTML = message;
-            chat.appendChild(messageDiv);
-            chat.scrollTop = chat.scrollHeight;
-        }
+    let isLoading = false;
 
-        function showTypingIndicator() {
-            const chat = document.getElementById('chat-messages');
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'typing-indicator';
-            typingDiv.id = 'typing-indicator';
-            typingDiv.innerHTML = `
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
-            `;
-            chat.appendChild(typingDiv);
-            chat.scrollTop = chat.scrollHeight;
-        }
+    // ---------------------------
+    // Formatting / UI helpers
+    // ---------------------------
+    function formatResponse(text) {
+        if (!text) return "";
+        // Handle nil and convert common markdown into safe HTML
+        return String(text)
+            // Replace bold **text**
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            // Replace italic *text*
+            .replace(/\*(.*?)\*/g, "<em>$1</em>")
+            // Convert common bullet markers to nicer bullets
+            .replace(/(^|\n)[\-\*\•]\s*/g, "$1• ")
+            // Preserve line breaks
+            .replace(/\n/g, "<br>")
+            // Trim repeated whitespace
+            .replace(/\s{2,}/g, " ");
+    }
 
-        function hideTypingIndicator() {
-            const typing = document.getElementById('typing-indicator');
-            if (typing) typing.remove();
-        }
+    function addMessage(message, isUser = false) {
+        const chat = document.getElementById('chat-messages');
+        if (!chat) return;
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+        messageDiv.innerHTML = formatResponse(message);
+        chat.appendChild(messageDiv);
+        chat.scrollTop = chat.scrollHeight;
+    }
 
-        function updateWatchlist() {
-            const watchlistEl = document.getElementById('watchlist');
-            
-            if (watchlist.length === 0) {
-                watchlistEl.innerHTML = '<p>Add shows to your watchlist!</p>';
-                return;
-            }
-            
-            watchlistEl.innerHTML = '';
-            watchlist.forEach((show, index) => {
-                const item = document.createElement('div');
-                item.className = 'watchlist-item';
-                item.innerHTML = `
-                    <span>${show}</span>
-                    <button onclick="removeFromWatchlist(${index})">Remove</button>
-                `;
-                watchlistEl.appendChild(item);
-            });
-            
-            // Save to localStorage
+    function showTypingIndicator() {
+        const chat = document.getElementById('chat-messages');
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'typing-indicator';
+        typingDiv.id = 'typing-indicator';
+        typingDiv.innerHTML = `
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+        `;
+        chat.appendChild(typingDiv);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+        const typing = document.getElementById('typing-indicator');
+        if (typing) typing.remove();
+    }
+
+    // ---------------------------
+    // Watchlist management
+    // ---------------------------
+    function updateWatchlist() {
+        const watchlistEl = document.getElementById('watchlist');
+        if (!watchlistEl) return;
+
+        if (watchlist.length === 0) {
+            watchlistEl.innerHTML = '<p>Add shows to your watchlist!</p>';
             localStorage.setItem('watchlist', JSON.stringify(watchlist));
+            return;
         }
 
-        function addToWatchlist(show) {
-            const cleanShow = show.trim();
-            if (!watchlist.includes(cleanShow) && cleanShow !== '') {
-                watchlist.push(cleanShow);
-                updateWatchlist();
-                return true;
-            }
-            return false;
-        }
+        watchlistEl.innerHTML = '';
+        watchlist.forEach((show, index) => {
+            const item = document.createElement('div');
+            item.className = 'watchlist-item';
+            const span = document.createElement('span');
+            span.innerHTML = formatResponse(show);
+            const btn = document.createElement('button');
+            btn.textContent = 'Remove';
+            btn.addEventListener('click', () => {
+                removeFromWatchlist(index);
+            });
+            item.appendChild(span);
+            item.appendChild(btn);
+            watchlistEl.appendChild(item);
+        });
 
-        function removeFromWatchlist(index) {
-            watchlist.splice(index, 1);
+        // Save to localStorage
+        localStorage.setItem('watchlist', JSON.stringify(watchlist));
+    }
+
+    function addToWatchlist(show) {
+        const cleanShow = show.trim();
+        if (!watchlist.includes(cleanShow) && cleanShow !== '') {
+            watchlist.push(cleanShow);
             updateWatchlist();
+            return true;
         }
+        return false;
+    }
 
-        function clearWatchlist() {
-            watchlist = [];
-            updateWatchlist();
-        }
+    function removeFromWatchlist(index) {
+        watchlist.splice(index, 1);
+        updateWatchlist();
+    }
 
-        async function handleGenreClick(genre) {
-            if (isLoading) return;
-            
-            const btn = document.querySelector(`.genre-btn[data-genre="${genre}"]`);
-            btn.classList.add('loading');
-            isLoading = true;
-            
-            showTypingIndicator();
-            
-            try {
-                const prompt = `Act as a TV show expert. Recommend 3 excellent ${genre} TV shows with:
-                              - Title in bold
-                              - Short description (10-15 words)
-                              - Year range
-                              - IMDb rating if available
-                              - Streaming platform if notable
-                              `;
-                
-                const response = await fetchGeminiResponse(prompt);
-                addMessage(`🎬 <strong>${genre.toUpperCase()} SHOWS</strong><br><br>${response}`);
-            } catch (error) {
-                console.error("API Error:", error);
-                addMessage("⚠️ Couldn't connect to my recommendation engine. Try again later or check your API key in settings!");
-            } finally {
-                btn.classList.remove('loading');
-                isLoading = false;
-                hideTypingIndicator();
-            }
-        }
+    function clearWatchlist() {
+        watchlist = [];
+        updateWatchlist();
+    }
 
-        async function fetchGeminiResponse(prompt) {
+    // ---------------------------
+    // Robust Gemini fetch with safe parsing & simple retry
+    // ---------------------------
+    async function fetchGeminiResponse(prompt) {
+        const maxAttempts = 2;
+        let lastErr = null;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
                 const response = await fetch(getApiUrl(), {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         contents: [{
-                            parts: [{
-                                text: prompt
-                            }]
+                            parts: [{ text: prompt }]
                         }]
                     })
                 });
 
                 if (!response.ok) {
-                    throw new Error(`API error: ${response.status}`);
+                    lastErr = new Error('HTTP ' + response.status);
+                    // If client-side error like 401/403, don't retry
+                    if (response.status >= 400 && response.status < 500) break;
+                    continue;
                 }
 
                 const data = await response.json();
-                
-                // Handle different response structures based on model
-                if (selectedModel === "gemini-2.0-flash") {
-                    if (!data.candidates || !data.candidates[0].content || !data.candidates[0].content.parts) {
-                        throw new Error("Invalid response structure from Gemini 2.0 Flash");
-                    }
-                    return data.candidates[0].content.parts[0].text;
+
+                // Try multiple places where the text could be
+                const candidateText =
+                    data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+                    data?.candidates?.[0]?.content?.text ||
+                    data?.response?.output?.[0]?.content?.text ||
+                    data?.outputs?.[0]?.content?.text;
+
+                if (candidateText && candidateText.trim().length > 0) {
+                    return candidateText;
                 } else {
-                    if (!data.candidates || !data.candidates[0].content.parts[0].text) {
-                        throw new Error("Invalid response structure from Gemini Pro");
-                    }
-                    return data.candidates[0].content.parts[0].text;
+                    lastErr = new Error("Empty response text");
                 }
-            } catch (error) {
-                console.error("Fetch error:", error);
-                throw error;
+            } catch (err) {
+                lastErr = err;
+            }
+        }
+        console.error("fetchGeminiResponse failed:", lastErr);
+        return "⚠️ I couldn't fetch a response right now. Please check your API key or try again.";
+    }
+
+    // ---------------------------
+    // Parse watchlist commands from user input
+    // ---------------------------
+    function parseWatchlistCommand(message) {
+        const lowerMessage = message.toLowerCase();
+
+        // Add
+        if (lowerMessage.includes('add') &&
+            (lowerMessage.includes('watchlist') || lowerMessage.includes('watch list'))) {
+            const regex = /add\s+(.+?)\s+to\s+(my\s+)?(watchlist|watch list)/i;
+            const match = message.match(regex);
+            if (match && match[1]) {
+                return { action: 'add', show: match[1].trim() };
             }
         }
 
-        function parseWatchlistCommand(message) {
-            const lowerMessage = message.toLowerCase();
-            
-            // Check for "add X to watchlist" patterns
-            if (lowerMessage.includes('add') && 
-                (lowerMessage.includes('watchlist') || lowerMessage.includes('watch list'))) {
-                // Extract show name - find what's between "add" and "to watchlist"
-                const regex = /add\s+(.+?)\s+to\s+(my\s+)?(watchlist|watch list)/i;
-                const match = message.match(regex);
-                
-                if (match && match[1]) {
-                    return { action: 'add', show: match[1].trim() };
-                }
-            }
-            
-            // Check for "remove X from watchlist" patterns
-            if (lowerMessage.includes('remove') && 
-                (lowerMessage.includes('watchlist') || lowerMessage.includes('watch list'))) {
-                const regex = /remove\s+(.+?)\s+from\s+(my\s+)?(watchlist|watch list)/i;
-                const match = message.match(regex);
-                
-                if (match && match[1]) {
-                    return { action: 'remove', show: match[1].trim() };
-                }
-            }
-            
-            // Other watchlist related commands
-            if (lowerMessage.match(/clear\s+(my\s+)?(watchlist|watch list)/i)) {
-                return { action: 'clear' };
-            }
-            
-            if (lowerMessage.match(/show\s+(my\s+)?(watchlist|watch list)/i)) {
-                return { action: 'show' };
-            }
-            
-            return null;
-        }
-
-        async function getWatchlistRecommendations() {
-            if (watchlist.length === 0) {
-                addMessage("Your watchlist is empty! Add some shows first to get personalized recommendations.");
-                return;
-            }
-            
-            if (isLoading) return;
-            isLoading = true;
-            showTypingIndicator();
-            
-            try {
-                const prompt = `Based on these shows in the user's watchlist: ${watchlist.join(', ')}, 
-                              recommend 3 other TV shows they might enjoy. For each recommendation:
-                              - Include show title in bold
-                              - Brief explanation of why they might like it based on their watchlist
-                              - Year, rating, and where to watch if available
-                              - Use TV-related emojis
-                              `;
-                
-                const response = await fetchGeminiResponse(prompt);
-                addMessage(`📺 <strong>RECOMMENDATIONS BASED ON YOUR WATCHLIST</strong><br><br>${response}`);
-            } catch (error) {
-                console.error("API Error:", error);
-                addMessage("⚠️ Couldn't generate recommendations. Try again later or check your API key in settings!");
-            } finally {
-                isLoading = false;
-                hideTypingIndicator();
+        // Remove
+        if (lowerMessage.includes('remove') &&
+            (lowerMessage.includes('watchlist') || lowerMessage.includes('watch list'))) {
+            const regex = /remove\s+(.+?)\s+from\s+(my\s+)?(watchlist|watch list)/i;
+            const match = message.match(regex);
+            if (match && match[1]) {
+                return { action: 'remove', show: match[1].trim() };
             }
         }
 
-        async function sendMessage() {
-            if (isLoading) return;
-            
-            const input = document.getElementById('user-input');
-            const message = input.value.trim();
-            
-            if (!message) return;
-            
-            addMessage(message, true);
-            input.value = '';
-            document.getElementById('send-btn').disabled = true;
-            isLoading = true;
-            showTypingIndicator();
+        // Clear
+        if (lowerMessage.match(/clear\s+(my\s+)?(watchlist|watch list)/i)) {
+            return { action: 'clear' };
+        }
 
-            try {
-                // Check for watchlist commands first
-                const watchlistCommand = parseWatchlistCommand(message);
-                if (watchlistCommand) {
-                    switch (watchlistCommand.action) {
-                        case 'add':
-                            const added = addToWatchlist(watchlistCommand.show);
-                            if (added) {
-                                addMessage(`✅ Added <strong>${watchlistCommand.show}</strong> to your watchlist!`);
-                            } else {
-                                addMessage(`⚠️ <strong>${watchlistCommand.show}</strong> is already in your watchlist or the show name was empty.`);
-                            }
-                            break;
-                        case 'remove':
-                            const index = watchlist.findIndex(show => 
-                                show.toLowerCase() === watchlistCommand.show.toLowerCase());
-                            if (index !== -1) {
-                                const removedShow = watchlist[index];
-                                removeFromWatchlist(index);
-                                addMessage(`✅ Removed <strong>${removedShow}</strong> from your watchlist.`);
-                            } else {
-                                addMessage(`⚠️ Couldn't find <strong>${watchlistCommand.show}</strong> in your watchlist.`);
-                            }
-                            break;
-                        case 'clear':
-                            clearWatchlist();
-                            addMessage(`✅ Your watchlist has been cleared.`);
-                            break;
-                        case 'show':
-                            if (watchlist.length === 0) {
-                                addMessage(`Your watchlist is empty! Try adding some shows.`);
-                            } else {
-                                const showList = watchlist.map(show => `• <strong>${show}</strong>`).join('<br>');
-                                addMessage(`📋 <strong>YOUR WATCHLIST</strong><br><br>${showList}`);
-                            }
-                            break;
-                    }
-                    return;
-                }
+        // Show
+        if (lowerMessage.match(/show\s+(my\s+)?(watchlist|watch list)/i)) {
+            return { action: 'show' };
+        }
 
-                // Check enhanced knowledge base
-                const lowerMessage = message.toLowerCase();
-                let directAnswer = null;
-                
-                for (const [key, value] of Object.entries(enhancedKnowledgeBase)) {
-                    if (lowerMessage.includes(key)) {
-                        directAnswer = value;
+        return null;
+    }
+
+    // ---------------------------
+    // Watchlist-based recommendations (short prompt)
+    // ---------------------------
+    async function getWatchlistRecommendations() {
+        if (watchlist.length === 0) {
+            addMessage("Your watchlist is empty! Add some shows first to get personalized recommendations.");
+            return;
+        }
+
+        if (isLoading) return;
+        isLoading = true;
+        showTypingIndicator();
+
+        try {
+            const prompt = `User likes these shows: ${watchlist.join(", ")}.
+Recommend 3 similar TV shows.
+
+Format each:
+• <strong>Title</strong> – 8–12 word reason why they'd like it
+• Include IMDb rating + platform if known
+Keep the whole answer short, no long paragraphs.`;
+
+            const response = await fetchGeminiResponse(prompt);
+            addMessage(`📺 <strong>RECOMMENDATIONS BASED ON YOUR WATCHLIST</strong><br><br>${response}`);
+        } catch (err) {
+            console.error(err);
+            addMessage("⚠️ Couldn't generate recommendations. Try again later or check your API key in settings!");
+        } finally {
+            isLoading = false;
+            hideTypingIndicator();
+        }
+    }
+
+    // ---------------------------
+    // Genre click handler (short, consistent)
+    // ---------------------------
+    async function handleGenreClick(genre) {
+        if (isLoading) return;
+
+        const btn = document.querySelector(`.genre-btn[data-genre="${genre}"]`);
+        if (btn) btn.classList.add('loading');
+        isLoading = true;
+        showTypingIndicator();
+
+        try {
+            const prompt = `Recommend 3 great ${genre} TV shows.
+Format:
+• <strong>Title</strong> (Year) – 10–12 word description
+• IMDb rating + streaming platform if known
+No long paragraphs.`;
+
+            const response = await fetchGeminiResponse(prompt);
+            addMessage(`🎬 <strong>${genre.toUpperCase()} SHOWS</strong><br><br>${response}`);
+        } catch (err) {
+            console.error(err);
+            addMessage("⚠️ Couldn't connect to my recommendation engine. Try again later or check your API key in settings!");
+        } finally {
+            if (btn) btn.classList.remove('loading');
+            isLoading = false;
+            hideTypingIndicator();
+        }
+    }
+
+    // ---------------------------
+    // Send message / main conversation flow
+    // ---------------------------
+    async function sendMessage() {
+        if (isLoading) return;
+
+        const input = document.getElementById('user-input');
+        if (!input) return;
+        const message = input.value.trim();
+        if (!message) return;
+
+        addMessage(message, true);
+        input.value = '';
+        document.getElementById('send-btn').disabled = true;
+        isLoading = true;
+        showTypingIndicator();
+
+        try {
+            // Watchlist commands first
+            const watchlistCommand = parseWatchlistCommand(message);
+            if (watchlistCommand) {
+                switch (watchlistCommand.action) {
+                    case 'add': {
+                        const added = addToWatchlist(watchlistCommand.show);
+                        if (added) {
+                            addMessage(`✅ Added <strong>${watchlistCommand.show}</strong> to your watchlist!`);
+                        } else {
+                            addMessage(`⚠️ <strong>${watchlistCommand.show}</strong> is already in your watchlist or the show name was empty.`);
+                        }
                         break;
                     }
-                }
-
-                if (directAnswer) {
-                    addMessage(directAnswer);
-                } else {
-                    const isTVQuery = 
-                            lowerMessage.includes('tv') || 
-                            lowerMessage.includes('show') || 
-                            lowerMessage.includes('series') || 
-                            <!-- lowerMessage.includes('recommend') ||  -->
-                            <!-- lowerMessage.includes('suggest') ||  -->
-                            <!-- lowerMessage.includes('best') ||  -->
-                            lowerMessage.includes('top') || 
-                            lowerMessage.includes('thriller') || 
-                            lowerMessage.includes('mood') || 
-                            lowerMessage.includes('popular') || 
-                            lowerMessage.includes('watch') || 
-                            lowerMessage.includes('binge') || 
-                            lowerMessage.includes('bored') || 
-                            lowerMessage.includes('what to watch') || 
-                            lowerMessage.includes('underrated') || 
-                            lowerMessage.includes('similar to') || 
-                            lowerMessage.includes('like') || 
-                            lowerMessage.includes('genre') || 
-                            lowerMessage.includes('comedy') || 
-                            lowerMessage.includes('drama') || 
-                            lowerMessage.includes('sci-fi') || 
-                            lowerMessage.includes('fantasy') || 
-                            lowerMessage.includes('romance') || 
-                            lowerMessage.includes('crime') || 
-                            lowerMessage.includes('animated') || 
-                            lowerMessage.includes('historical') || 
-                            lowerMessage.includes('feel-good') || 
-                            lowerMessage.includes('dark') || 
-                            lowerMessage.includes('twist') || 
-                            lowerMessage.includes('family-friendly') || 
-                            <!-- lowerMessage.includes('teen') ||  -->
-                            <!-- lowerMessage.includes('adult') ||  -->
-                            lowerMessage.includes('netflix') || 
-                            lowerMessage.includes('hbo') || 
-                            lowerMessage.includes('disney') || 
-                            lowerMessage.includes('prime') || 
-                            lowerMessage.includes('apple tv') || 
-                            <!-- lowerMessage.includes('hulu') ||  -->
-                            lowerMessage.includes('short') || 
-                            <!-- lowerMessage.includes('long') ||  -->
-                            lowerMessage.includes('season') || 
-                            lowerMessage.includes('episode') || 
-                            lowerMessage.includes('emmy') || 
-                            <!-- lowerMessage.includes('golden globe') ||  -->
-                            lowerMessage.includes('imdb') || 
-                            lowerMessage.includes('actor') || 
-                            lowerMessage.includes('director') || 
-                            lowerMessage.includes('writer') || 
-                            lowerMessage.includes('90s') || 
-                            lowerMessage.includes('2000s') || 
-                            lowerMessage.includes('2024') || 
-                            lowerMessage.includes('korean') || 
-                            lowerMessage.includes('k-drama') || 
-                            <!-- lowerMessage.includes('spanish') ||  -->
-                            <!-- lowerMessage.includes('british') ||  -->
-                            lowerMessage.includes('anime') || 
-                            lowerMessage.includes('binge-worthy') || 
-                            lowerMessage.includes('addictive') || 
-                            lowerMessage.includes('plot twist') || 
-                            lowerMessage.includes('time travel') || 
-                            lowerMessage.includes('mystery') || 
-                            lowerMessage.includes('zombie') || 
-                            <!-- lowerMessage.includes('apocalypse') ||  -->
-                            lowerMessage.includes('upcoming') || 
-                            <!-- lowerMessage.includes('cancelled') ||  -->
-                            lowerMessage.includes('compare') || 
-                            lowerMessage.includes('rating') || 
-                            lowerMessage.includes('worth watching');
-
-                    if (!isTVQuery) {
-                        addMessage(`⚠️ I'm specialized in TV shows only! 🎬<br>
-                                  Try asking about:<br>
-                                  • Show recommendations<br>
-                                  • Genre information<br>
-                                  • Popular series<br>
-                                  • Managing your watchlist`);
-                        return;
+                    case 'remove': {
+                        const index = watchlist.findIndex(show =>
+                            show.toLowerCase() === watchlistCommand.show.toLowerCase());
+                        if (index !== -1) {
+                            const removedShow = watchlist[index];
+                            removeFromWatchlist(index);
+                            addMessage(`✅ Removed <strong>${removedShow}</strong> from your watchlist.`);
+                        } else {
+                            addMessage(`⚠️ Couldn't find <strong>${watchlistCommand.show}</strong> in your watchlist.`);
+                        }
+                        break;
                     }
-
-                    const prompt = `As an expert TV show recommendation assistant, respond to this query: "${message}".
-                                  Include:<br>
-                                  - Show titles in bold<br>
-                                  - Brief descriptions<br>
-                                  - Relevant years or ratings if available<br>
-                                  - Use TV-related emojis<br>
-                                  - Keep response under 150 words<br>
-                                  - Include streaming service information when relevant`; 
-                    
-                    const geminiResponse = await fetchGeminiResponse(prompt);
-                    addMessage(`📺 ${geminiResponse}`);
+                    case 'clear':
+                        clearWatchlist();
+                        addMessage(`✅ Your watchlist has been cleared.`);
+                        break;
+                    case 'show':
+                        if (watchlist.length === 0) {
+                            addMessage(`Your watchlist is empty! Try adding some shows.`);
+                        } else {
+                            const showList = watchlist.map(show => `• <strong>${show}</strong>`).join('<br>');
+                            addMessage(`📋 <strong>YOUR WATCHLIST</strong><br><br>${showList}`);
+                        }
+                        break;
                 }
-            } catch (error) {
-                console.error("Error:", error);
-                addMessage("🔧 Sorry, I'm having trouble connecting to my knowledge base. Try again later or check your API key in settings!");
-            } finally {
-                isLoading = false;
-                hideTypingIndicator();
-                document.getElementById('send-btn').disabled = false;
-                input.focus();
+                return;
             }
-        }
 
-        // Save API key
-        document.getElementById('save-api-key').addEventListener('click', function() {
+            // Enhanced knowledge base shortcuts
+            const lowerMessage = message.toLowerCase();
+            let directAnswer = null;
+            for (const [key, value] of Object.entries(enhancedKnowledgeBase)) {
+                if (lowerMessage.includes(key)) {
+                    directAnswer = value;
+                    break;
+                }
+            }
+            if (directAnswer) {
+                addMessage(directAnswer);
+                return;
+            }
+
+            // No strict TV-only filter anymore. Let the model decide.
+            const prompt = `As an expert TV show recommendation assistant, respond to this query: "${message}".
+Include:
+- Show titles in bold
+- Brief descriptions
+- Relevant years or ratings if available
+- Use TV-related emojis
+- Keep response under 150 words
+- Include streaming service information when relevant`;
+
+            const geminiResponse = await fetchGeminiResponse(prompt);
+            addMessage(`📺 ${geminiResponse}`);
+        } catch (err) {
+            console.error("Error in sendMessage:", err);
+            addMessage("🔧 Sorry, I'm having trouble connecting to my knowledge base. Try again later or check your API key in settings!");
+        } finally {
+            isLoading = false;
+            hideTypingIndicator();
+            document.getElementById('send-btn').disabled = false;
+            input.focus();
+        }
+    }
+
+    // ---------------------------
+    // Save API key handler
+    // ---------------------------
+    const saveApiKeyBtn = document.getElementById('save-api-key');
+    if (saveApiKeyBtn) {
+        saveApiKeyBtn.addEventListener('click', function () {
             const newKey = document.getElementById('api-key-input').value.trim();
             if (newKey) {
                 GEMINI_API_KEY = newKey;
                 localStorage.setItem('gemini_api_key', newKey);
-                document.getElementById('api-status').textContent = "API key saved";
-                document.getElementById('api-status').className = "api-status valid";
+                const apiStatus = document.getElementById('api-status');
+                if (apiStatus) {
+                    apiStatus.textContent = "API key saved";
+                    apiStatus.className = "api-status valid";
+                }
             } else {
-                document.getElementById('api-status').textContent = "Please enter a valid API key";
-                document.getElementById('api-status').className = "api-status invalid";
+                const apiStatus = document.getElementById('api-status');
+                if (apiStatus) {
+                    apiStatus.textContent = "Please enter a valid API key";
+                    apiStatus.className = "api-status invalid";
+                }
             }
         });
+    }
 
-        // Toggle settings panel
-        document.getElementById('settings-toggle').addEventListener('click', function() {
+    // Toggle settings panel
+    const settingsToggle = document.getElementById('settings-toggle');
+    if (settingsToggle) {
+        settingsToggle.addEventListener('click', function () {
             const panel = document.getElementById('settings-panel');
-            if (panel.style.display === 'block') {
-                panel.style.display = 'none';
-            } else {
-                panel.style.display = 'block';
+            if (panel) {
+                panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
             }
         });
+    }
 
-        // Model selector
-        document.getElementById('model-selector').addEventListener('change', function() {
+    // Model selector
+    const modelSelector = document.getElementById('model-selector');
+    if (modelSelector) {
+        modelSelector.addEventListener('change', function () {
             selectedModel = this.value;
         });
+    }
 
-        // Event Listeners
-        document.querySelectorAll('.genre-btn').forEach(btn => {
-            btn.addEventListener('click', () => handleGenreClick(btn.dataset.genre));
-        });
+    // Genre buttons
+    document.querySelectorAll('.genre-btn').forEach(btn => {
+        btn.addEventListener('click', () => handleGenreClick(btn.dataset.genre));
+    });
 
-        document.getElementById('user-input').addEventListener('keypress', (e) => {
+    // Enter key to send
+    const userInput = document.getElementById('user-input');
+    if (userInput) {
+        userInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !isLoading) sendMessage();
         });
 
         // Enable/disable send button based on input
-        document.getElementById('user-input').addEventListener('input', function() {
-            document.getElementById('send-btn').disabled = this.value.trim() === '';
+        userInput.addEventListener('input', function () {
+            const sendBtn = document.getElementById('send-btn');
+            if (sendBtn) sendBtn.disabled = this.value.trim() === '';
         });
+    }
 
-        document.getElementById('clear-watchlist').addEventListener('click', clearWatchlist);
-        document.getElementById('get-recommendations').addEventListener('click', getWatchlistRecommendations);
+    const clearWatchlistBtn = document.getElementById('clear-watchlist');
+    if (clearWatchlistBtn) clearWatchlistBtn.addEventListener('click', clearWatchlist);
+    const getRecBtn = document.getElementById('get-recommendations');
+    if (getRecBtn) getRecBtn.addEventListener('click', getWatchlistRecommendations);
 
-        // Initialize watchlist
-        updateWatchlist();
-    </script>
+    // Initialize watchlist UI on load
+    updateWatchlist();
+
+</script>
+
 </body>
 </html>
