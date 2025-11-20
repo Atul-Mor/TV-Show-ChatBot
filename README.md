@@ -49,28 +49,29 @@ Stored securely in your browser (not uploaded anywhere).
 
 ## 🏗 Architecture
 
-┌──────────────────────────┐
-│ User Browser │
-│ HTML + CSS + JS │
-└───────────┬──────────────┘
-│
-▼
-┌──────────────────────────┐
-│ Frontend Logic (JS) │
-│ - Chat System │
-│ - Watchlist Manager │
-│ - Genre Buttons │
-│ - Markdown Formatter │
-│ - API Key Settings │
-└───────────┬──────────────┘
-│ fetch()
-▼
-┌──────────────────────────┐
-│ Google Gemini API │
-│ - Recommendation Engine │
-│ - Similar Shows │
-│ - Genre Suggestions │
-└──────────────────────────┘
+## 🏗 Architecture Diagram
+
+```mermaid
+flowchart TD
+
+A[User Browser<br/>HTML + CSS + JS] --> B[Frontend Logic (JavaScript)]
+
+B -->|fetch()| C[Google Gemini API]
+
+subgraph Frontend Logic
+    B1[Chat System]
+    B2[Watchlist Manager]
+    B3[Genre Buttons]
+    B4[Markdown Formatter]
+    B5[API Key Settings]
+end
+
+subgraph Gemini API
+    C1[Recommendation Engine]
+    C2[Similar Shows]
+    C3[Genre Suggestions]
+end
+
 
 
 ### 🔎 Component Breakdown
