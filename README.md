@@ -51,12 +51,12 @@ Stored securely in your browser (not uploaded anywhere).
 
 ## 🏗 Architecture Diagram
 
+## 🏗 Architecture Diagram
+
 ```mermaid
 flowchart TD
 
-A[User Browser<br/>HTML + CSS + JS] --> B[Frontend Logic (JavaScript)]
-
-B -->|fetch()| C[Google Gemini API]
+A[User Browser<br/>HTML + CSS + JS] --> B[Frontend Logic]
 
 subgraph Frontend Logic
     B1[Chat System]
@@ -66,12 +66,13 @@ subgraph Frontend Logic
     B5[API Key Settings]
 end
 
-subgraph Gemini API
+B --> C[Google Gemini API]
+
+subgraph Google Gemini API
     C1[Recommendation Engine]
     C2[Similar Shows]
     C3[Genre Suggestions]
 end
-
 
 
 ### 🔎 Component Breakdown
